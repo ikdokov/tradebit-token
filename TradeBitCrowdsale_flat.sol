@@ -40,7 +40,7 @@ interface Token {
 
 contract TradeBitCrowdsale {
 
-    uint public tbtHardCap = 375000000 * (10 ** 18);
+    uint256 public hardCap = 3000 * (10 ** 18);
     
     // include SafeMath - give oportunity to use it directly on uint256 type
     using SafeMath for uint256;
@@ -53,7 +53,7 @@ contract TradeBitCrowdsale {
     uint256 public startTime;
     uint256 public endTime;
 
-    uint256 public tbtRaised;
+    uint256 public ethRaised;
     
     uint256 twentyDaysInSeconds = 1728000;
     
@@ -61,9 +61,9 @@ contract TradeBitCrowdsale {
     uint256 timePhase2;
     uint256 timePhase3;
 
-    uint ratePhase1 = 7500;
-    uint ratePhase2 = 6250;
-    uint ratePhase3 = 5000;
+    uint ratePhase1 = 120000;
+    uint ratePhase2 = 100000;
+    uint ratePhase3 = 80000;
     /**
     * event for token purchase logging
     * @param purchaser who paid for the tokens
@@ -95,9 +95,7 @@ contract TradeBitCrowdsale {
 
         tokenContract.transferFrom(owner, beneficiary, tbTokens);
 
-        tbtRaised = tbtRaised.add(tbTokens);
-
-        owner.transfer(weiAmount);
+        ethRaised = ethRaised.add(weiAmount);
 
         TokenPurchase(msg.sender, beneficiary, weiAmount, tbTokens);
     }
@@ -117,7 +115,7 @@ contract TradeBitCrowdsale {
     function validPurchase() internal view returns (bool) {
         bool withinPeriod = now >= startTime && now <= endTime;
         bool nonZeroPurchase = msg.value != 0;
-        return withinPeriod && nonZeroPurchase && tbtRaised < tbtHardCap;
+        return withinPeriod && nonZeroPurchase && ethRaised < hardCap;
     }
     
     function hasStarted() public view returns (bool) {
@@ -126,5 +124,19 @@ contract TradeBitCrowdsale {
 
     function hasEnded() public view returns (bool) {
         return now > endTime;
+    }
+    
+    modifier onlyOwner() {
+        require (msg.sender == owner);
+        _;
+    }
+
+    function withdraw(uint256 amount) public onlyOwner {
+        require(amount <= this.balance);
+        owner.transfer(amount);
+    }
+
+    function withdrawAll() public onlyOwner {
+        withdraw(this.balance);
     }
 }
